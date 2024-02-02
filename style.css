@@ -1,0 +1,30 @@
+body {
+    padding: 0;
+    margin: 0;
+    height: 100vh;
+}
+
+footer {
+    position: absolute;
+    width: 100%;
+    bottom:0 ;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+}
+
+.container {
+    padding-right: 14em;
+    padding-left: 14em;
+    margin: auto;
+    margin-top: 2em;
+    display: flex;
+    justify-content: center;
+}
+.container-item {
+    border: 1px red solid;
+    width: 50%;
+    min-height: 400px;
+    margin: 4px;
+}
