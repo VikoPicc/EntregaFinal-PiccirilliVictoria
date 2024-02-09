@@ -14,19 +14,14 @@ let persona = {
     dni: 4000000,
 }
 
-
-
 let cuenta = {
     CBU: '01294401203394', 
     usuarioCajeroId: 1,
-    // tipo: '', // ahorro, corriente, extranjero
     saldo: 40000,
     limiteExtraccionDia: 10000,
     movimientos: []
 };
 
-
-// tiene una capacidad por billete ni por total
 let cajero = {
     billetes: {
         5: 100,
@@ -53,12 +48,13 @@ let usuarioCajero = {
     cuentas: ['01294401203394'],
 }
 
-let repositorioUsuarios= [usuarioCajero];
-let repositorioCuentas= [cuenta];
+let repositorioUsuarios = [usuarioCajero];
+let repositorioCuentas = [cuenta];
 
 const operacionConsulta = {
     nombre: 'CONSULTA',
-    operacion: 'consultarEstadoCuenta'
+    operacion: 'consultarEstadoCuenta',
+
 }
 
 const operacionExtraccion = {
@@ -75,46 +71,42 @@ let cajeroManager = {
     _usuario: null,
     _cajero: cajero,
     _cuenta: null,
-    _operacion: null,
+    _tipoOperacion: null, // Nueva variable para almacenar el tipo de operación
     ingresar: (usuarioInput, passwordInput) => {
-        // chequear si existe usuario
         let listaUsuariosEncontrados = repositorioUsuarios.filter(u => u.nombreUsuario == usuarioInput);
         if (listaUsuariosEncontrados.length == 0) {
             return;
         }
-        // chequear si contraseña es correcta
         if (passwordInput == listaUsuariosEncontrados[0].clave) {
-
-            // si usuario existe y contraseña es correcta almacenarlo en variable del objeto _usuario
             cajeroManager._usuario = listaUsuariosEncontrados[0];
         }
     },
     operaciones: [
-        operacionConsulta, 
-        operacionDeposito, 
+        operacionConsulta,
+        operacionDeposito,
         operacionExtraccion,
     ],
-
     cuentasDisponibles: () => {
-        return _usuario.cuentas;
+        return cajeroManager._usuario.cuentas;
     },
-
     setearOperacion: (operacion) => {
-        if(operacion == 'consultarEstadoCuenta'){
-           cajeroManager._operacion = cajeroManager._consultarEstadoCuenta;
-
+        if (operacion == 'consultarEstadoCuenta') {
+            cajeroManager._tipoOperacion = 'consulta';
         } else if (operacion == 'retirarDinero') {
             // setear para otras operaciones
+        } else if (operacion == 'ingresarDinero') {
+            cajeroManager._tipoOperacion = 'deposito';
         }
     },
-
     setearCuenta: (cbu) => {
         let cuenta = repositorioCuentas.filter(cuenta => cuenta.CBU == cbu)[0];
         cajeroManager._cuenta = cuenta;
     },
-
     _consultarEstadoCuenta: (cbu) => {
         return cajeroManager._cuenta.saldo;
+    },
+    depositar: (monto) => {
+        cajeroManager._cuenta.saldo += monto;
     }
 }
 
@@ -130,10 +122,24 @@ function retirarDinero(monto) {
 }
 
 function ingresarDinero(cuenta, monto) {
+    if (monto <= 0) {
+        return "El monto a depositar debe ser mayor que cero.";
+    }
     // chequear limite deposito
+    if (monto > cajeroManager._cuenta.limiteDeposito) {
+        return "El monto a depositar excede el límite de depósito de la cuenta.";
+    }
+     // Añadir el monto al saldo de la cuenta
+     cajeroManager._cuenta.saldo += monto;
+    // Agregar el movimiento a la lista de movimientos de la cuenta
+    cajeroManager._cuenta.movimientos.push({
+        tipo: 'DEPOSITO',
+        monto: monto,
+        fecha: new Date()
+    });
 
+    return `Se han depositado ${monto} pesos en la cuenta.`;
     // chequear capacidad de cajero
-
     // descontar dinero de la cuenta
 }
 
@@ -145,11 +151,23 @@ function seleccionarOperacion(operacion) {
     cajeroManager.setearOperacion(operacion);
     cambiarPagina(paginaCuenta());
 }
-
 function seleccionarCuenta(cbu) {
-    cajeroManager.setearCuenta(cbu);
-    console.log(cajeroManager._consultarEstadoCuenta());
-    // cambiarPagina(paginaCuenta);
+    if (cajeroManager._tipoOperacion === 'consulta') {
+        cajeroManager.setearCuenta(cbu);
+        cambiarPagina(paginaSaldo());
+    } else if (cajeroManager._tipoOperacion === 'deposito') {
+        cajeroManager.setearCuenta(cbu);
+        cambiarPagina(paginaIngresoDeposito());
+    }
+}
+
+
+
+function aceptarDeposito() {
+    // Realizar lógica para aceptar el depósito
+    const montoDeposito = Number(document.querySelector('#montoDeposito').value);
+    cajeroManager.depositar(montoDeposito);
+    cambiarPagina(paginaSaldo());
 }
 
 // ------------------------------------- LOGICA DE LA PAGINA (Interactua con el DOM) ----------------------------------------------------------
@@ -168,34 +186,64 @@ let paginaCajero = `
         OTRA IMAGEN
     </div>
 `
+
 let botonOperacion = (operacion) => `
     <button onclick="seleccionarOperacion('${operacion.operacion}')" type="button">${operacion.nombre}</button>
 `
 
 let botonCuenta = (cuenta) => `
-    <button onclick="seleccionarCuenta(${cuenta})" type="button">${cuenta}</button>
+    <button onclick="seleccionarCuenta('${cuenta}')" type="button">${cuenta}</button>
 `
 
 let paginaOperaciones = `
     <div class="container-item">
-        <h2>Seleccione una operacion</h2>
+        <h2>Seleccione una operación</h2>
         ${ cajeroManager.operaciones.map(operacion => botonOperacion(operacion)).toString().replaceAll(',', '') }
     </div>
     <div class="container-item">
-        OTRA IMAGEN
+        <img src="./images/cajaf.jpg" alt="">
     </div>
 `
+
+function cambiarPagina(pagina) {
+    let main = document.querySelector('#main')
+    main.innerHTML = pagina;
+}
 
 let paginaCuenta = () => `
     <div class="container-item">
         <h2>Seleccione una cuenta</h2>
-        ${ cajeroManager._usuario.cuentas.map(botonCuenta) }
+        ${ cajeroManager.cuentasDisponibles().map(botonCuenta) }
     </div>
     <div class="container-item">
-        OTRA IMAGEN
+    <img src="./images/chanchito2.jpg" alt="">
     </div>
 `
 
+let paginaIngresoDeposito = () => `
+    <div class="container-item">
+        <h2>Ingresar Depósito</h2>
+        <form>
+            <label>Monto a ingresar:</label>
+            <input type="number" id="montoDeposito" required>
+            <p>Límite de depósito: ${cajeroManager._cuenta.limiteDeposito}</p>
+            <button onclick="aceptarDeposito()" type="button">Aceptar</button>
+        </form>
+    </div>
+    <div class="container-item">
+        <img src="./images/dolares.jpg" alt="">
+    </div>
+`
+
+let paginaSaldo = () => `
+    <div class="container-item">
+        <h2>Saldo de la cuenta</h2>
+        <p>Saldo actual: ${cajeroManager._consultarEstadoCuenta()}</p>
+    </div>
+    <div class="container-item">
+        <img src="./images/plata.jpg" alt="">
+    </div>
+`
 
 function ingresarCajero() {
     let usuario = document.querySelector('input[name="usuario"]').value;
@@ -208,11 +256,6 @@ function ingresarCajero() {
     } else {
         alert('Usuario No Encontrado');
     }
-}
-
-function cambiarPagina(pagina) {
-    let main = document.querySelector('#main')
-    main.innerHTML = pagina;
 }
 
 // cambiarPagina(paginaOperaciones);

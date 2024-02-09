@@ -2,16 +2,20 @@ body {
     padding: 0;
     margin: 0;
     height: 100vh;
+    background-color: #f0f0f0;
+    font-family: Arial, sans-serif;
 }
 
 footer {
     position: absolute;
     width: 100%;
-    bottom:0 ;
+    bottom: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 8px;
+    background-color: #333;
+    color: #fff;
 }
 
 .container {
@@ -22,9 +26,45 @@ footer {
     display: flex;
     justify-content: center;
 }
+
 .container-item {
-    border: 1px red solid;
+    border: 1px solid #ccc;
     width: 50%;
     min-height: 400px;
     margin: 4px;
+    background-color: #fff;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.container-item form {
+    display: flex;
+    flex-direction: column;
+}
+
+.container-item input,
+.container-item button {
+    margin-bottom: 10px;
+    padding: 10px;
+    font-size: 16px;
+}
+
+.container-item button {
+    background-color: #4caf50;
+    color: #fff;
+    cursor: pointer;
+}
+
+.container-item button:hover {
+    background-color: #45a049;
+}
+
+.container-item u {
+    cursor: pointer;
+    color: blue;
+}
+
+.container-item img {
+    width: 100%;
+    height: auto;
 }
