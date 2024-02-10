@@ -16,8 +16,8 @@
             <form>
                 <input name="usuario" type="text" placeholder="Usuario" >
                 <input name="password" type="text" placeholder="Clave">
-                <button type="button" onclick="ingresarCajero()">Entrar</button>
-                <button style="background-color:brown" onclick="cambiarPagina(paginaCajero)">Soy nuevo aquì?</button>
+                <button tabindex="1" type="submit" onsubmit="ingresarCajero()" onclick="ingresarCajero()">Entrar</button>
+                <button tabindex="2" type="button" style="background-color:brown" onclick="cambiarPagina(paginaCajero)">Soy nuevo aquì?</button>
             </form>
         </div>
         <div class="container-item">
@@ -28,7 +28,7 @@
         Copyright 2024 - Victoria Piccirilli Cajero Simulator
     </footer>
 <script src="./repositorioCuentas.js"></script>
-<script src="./repositorioUsuario.js"></script>
+<script src="./repositorioUsuarios.js"></script>
 <script src="./main.js"></script>
 </body>
 </html>

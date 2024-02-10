@@ -5,7 +5,6 @@
  */
 
 // --------------------------------------------- LOGICA DE CAJERO ----------------------------------------------------------
-
 let persona = {
     id: 1,
     nombre: 'test',
@@ -176,10 +175,10 @@ function retirarDinero(monto) {
 let paginaInicio = `
     <div class="container-item">
     <h2>Ingrese usuario para operar</h2>
-        <form>
+        <form onsubmit="evt => evt.preventDefault(); ingresarCajero()">
             <input name="usuario" type="text" placeholder="Usuario" >
             <input name="password" type="text" placeholder="Clave">
-            <button type="button" onclick="ingresarCajero()">Entrar</button>
+            <button type="submit" onsubmit="ingresarCajero()" onclick="ingresarCajero()">Entrar</button>
             <button style="background-color:brown" onclick="cambiarPagina(paginaCajero)">Soy nuevo aquì?</button>
         </form>
     </div>
@@ -191,14 +190,14 @@ let paginaInicio = `
 let paginaCajero = `
     <div class="container-item">
         <h2>Crear usuario</h2>
-        <form>
+        <form onsubmit="evt => evt.preventDefault(); registrar()">
             <input name="nombre" type="text" placeholder="Nombre" />
             <input name="apellido" type="text" placeholder="Apellido" />
             <input name="dni" type="text" placeholder="DNI" />
             <input name="fechaNacimiento" type="date" placeholder="Fecha de Nacimiento"  />
             <input name="password" type="password" placeholder="Contraseña" />
             <input name="password2" type="password" placeholder="Rescribir Contraseña" />
-            <button onclick="registrar()">Crear cuenta</ button>
+            <button type="button" onclick="registrar()">Crear cuenta</ button>
         </form>
     </div>
     <div class="container-item">
@@ -250,6 +249,7 @@ function registrar() {
         usuarioCajeroId: repositorioUsuarios.length + 1, 
         saldo: 1000, 
         limiteExtraccionDia: 10000, 
+        limiteDeposito: 100000, 
         movimientos: [] 
     }; 
 
@@ -296,11 +296,11 @@ let paginaCuenta = () => `
 let paginaIngresoDeposito = () => `
     <div class="container-item">
         <h2>Ingresar Depósito</h2>
-        <form>
+        <form onsubmit="evt => evt.preventDefault(); aceptarDeposito()">
             <label>Monto a ingresar:</label>
             <input type="number" id="montoDeposito" required>
             <p>Límite de depósito: ${cajeroManager._cuenta.limiteDeposito}</p>
-            <button onclick="aceptarDeposito()" type="button">Aceptar</button>
+            <button type="button" onclick="aceptarDeposito()">Aceptar</button>
         </form>
     </div>
     <div class="container-item">
@@ -321,10 +321,10 @@ let paginaSaldo = () => `
 let paginaExtraccion = () => `
     <div class="container-item">
         <h2>Ingrese Extracción</h2>
-        <form>
+        <form onsubmit="evt => evt.preventDefault(); aceptarExtraccion()">
             <label>Monto a extraer:</label>
             <input type="number" id="montoDeposito" required>
-            <p>Límite de extracción: ${cajeroManager._cuenta.limiteDeposito}</p>
+            <p>Límite de extracción: ${cajeroManager._cuenta.limiteExtraccionDia}</p>
             <button onclick="aceptarExtraccion()" type="button">Aceptar</button>
         </form>
     </div>
