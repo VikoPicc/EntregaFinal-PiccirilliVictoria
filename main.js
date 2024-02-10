@@ -19,6 +19,7 @@ let cuenta = {
     usuarioCajeroId: 1,
     saldo: 40000,
     limiteExtraccionDia: 10000,
+    limiteDeposito: 10000,
     movimientos: []
 };
 
@@ -48,9 +49,6 @@ let usuarioCajero = {
     cuentas: ['01294401203394'],
 }
 
-let repositorioUsuarios = [usuarioCajero];
-let repositorioCuentas = [cuenta];
-
 const operacionConsulta = {
     nombre: 'CONSULTA',
     operacion: 'consultarEstadoCuenta',
@@ -72,7 +70,7 @@ let cajeroManager = {
     _cuenta: null,
     _tipoOperacion: null,
     ingresar: (usuarioInput, passwordInput) => {
-        let usuarioEncontrado = repositorioUsuarios.find(u => u.nombreUsuario == usuarioInput && u.clave == passwordInput);
+        let usuarioEncontrado = repositorioUsuarios.recuperarPorNombreUsuario(usuarioInput, passwordInput);
         if (usuarioEncontrado) {
             cajeroManager._usuario = usuarioEncontrado;
             return true;
@@ -98,7 +96,7 @@ let cajeroManager = {
         }
     },
     setearCuenta: (cbu) => {
-        let cuenta = repositorioCuentas.find(cuenta => cuenta.CBU == cbu);
+        let cuenta = repositorioCuentas.buscarPorCbu(cbu);
         cajeroManager._cuenta = cuenta;
     },
     _consultarEstadoCuenta: (cbu) => {
@@ -175,20 +173,39 @@ function retirarDinero(monto) {
 
 // ------------------------------------- LOGICA DE LA PAGINA (Interactua con el DOM) ----------------------------------------------------------
 
+let paginaInicio = `
+    <div class="container-item">
+    <h2>Ingrese usuario para operar</h2>
+        <form>
+            <input name="usuario" type="text" placeholder="Usuario" >
+            <input name="password" type="text" placeholder="Clave">
+            <button type="button" onclick="ingresarCajero()">Entrar</button>
+            <button style="background-color:brown" onclick="cambiarPagina(paginaCajero)">Soy nuevo aquì?</button>
+        </form>
+    </div>
+    <div class="container-item">
+        <img src="./images/cajero1.jpg" alt="">
+    </div>
+`
+
 let paginaCajero = `
     <div class="container-item">
         <h2>Crear usuario</h2>
         <form>
-            <input type="text" placeholder="Nombre" value="Nombre">
-            <input type="text" placeholder="Apellido" value="Apellido">
-            <input type="text" placeholder="DNI" value="DNI">
-            <input type="text" placeholder="Fecha de Nacimiento" value="Fecha de Nacimiento">
+            <input name="nombre" type="text" placeholder="Nombre" />
+            <input name="apellido" type="text" placeholder="Apellido" />
+            <input name="dni" type="text" placeholder="DNI" />
+            <input name="fechaNacimiento" type="date" placeholder="Fecha de Nacimiento"  />
+            <input name="password" type="password" placeholder="Contraseña" />
+            <input name="password2" type="password" placeholder="Rescribir Contraseña" />
+            <button onclick="registrar()">Crear cuenta</ button>
         </form>
     </div>
     <div class="container-item">
-        OTRA IMAGEN
+        <img src="./images/cajero1.jpg" alt="">
     </div>
 `
+
 
 let botonOperacion = (operacion) => `
     <button onclick="seleccionarOperacion('${operacion.operacion}')" type="button">${operacion.nombre}</button>
@@ -207,6 +224,59 @@ let paginaOperaciones = `
         <img src="./images/cajaf.jpg" alt="">
     </div>
 `
+
+function registrar() {
+    let nombre = document.querySelector('input[name="nombre"]').value;
+    let apellido = document.querySelector('input[name="apellido"]').value;
+    let dni = document.querySelector('input[name="dni"]').value;
+    let fechaNacimiento = document.querySelector('input[name="fechaNacimiento"]').value;
+    let password = document.querySelector('input[name="password"]').value;
+    let password2 = document.querySelector('input[name="password2"]').value;
+
+    if (password !== password2) {
+        alert('Las contraseñas no coinciden');
+        document.querySelector('input[name="nombre"]').value = '';
+        document.querySelector('input[name="apellido"]').value = '';
+        document.querySelector('input[name="dni"]').value = '';
+        document.querySelector('input[name="fechaNacimiento"]').value = '';
+        document.querySelector('input[name="password"]').value = '';
+        document.querySelector('input[name="password2"]').value = '';
+        return;
+    }
+
+    const nuevoCbu = generarCbu();
+    let nuevaCuenta = { 
+        CBU: nuevoCbu, 
+        usuarioCajeroId: repositorioUsuarios.length + 1, 
+        saldo: 1000, 
+        limiteExtraccionDia: 10000, 
+        movimientos: [] 
+    }; 
+
+    repositorioCuentas.guardar(nuevaCuenta);
+    let usuario = {
+        id: repositorioUsuarios.length + 1,
+        nombre: nombre,
+        nombreUsuario: `${nombre.toLowerCase()}.${apellido.toLowerCase()}.${dni}`,
+        cuentas: [nuevoCbu],
+        apellido: apellido,
+        dni: dni,
+        fechaNacimiento: fechaNacimiento,
+        clave: password,
+    }
+
+    repositorioUsuarios.guardar(usuario);
+    alert('SU USUARIO ES: ' + usuario.nombreUsuario + ' Y SU CBU ES: ' + nuevoCbu + ' GUARDELOS BIEN!');
+    cambiarPagina(paginaInicio);
+}
+
+function generarCbu() {
+    let numero = '';
+    for (let i = 0; i < 10; i++) {
+      numero += Math.floor(Math.random() * 10);
+    }
+    return numero;
+}
 
 function cambiarPagina(pagina) {
     let main = document.querySelector('#main')
@@ -242,6 +312,7 @@ let paginaSaldo = () => `
     <div class="container-item">
         <h2>Saldo de la cuenta</h2>
         <p>Saldo actual: ${cajeroManager._consultarEstadoCuenta()}</p>
+        <button onclick="volverAlInicio()" type="button">Volver al inicio</button>
     </div>
     <div class="container-item">
         <img src="./images/plata.jpg" alt="">
@@ -261,6 +332,9 @@ let paginaExtraccion = () => `
         <img src="./images/extraccion.jpg" alt="">
     </div>
 `
+function volverAlInicio() {
+    cambiarPagina(paginaOperaciones);
+}
 
 function aceptarExtraccion() {
     // Realizar lógica para aceptar la extracción
