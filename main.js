@@ -1,5 +1,5 @@
 /**
- * Simulador de cajero automàtico
+ * Simulador de cajero automático
  * El cajero funciona con billetes de 5, 10, 50, 100
  * Al crear una nueva cuenta el banco te asigna un saldo de 1000 pesos
  */
@@ -15,7 +15,7 @@ let persona = {
 }
 
 let cuenta = {
-    CBU: '01294401203394', 
+    CBU: '01294401203394',
     usuarioCajeroId: 1,
     saldo: 40000,
     limiteExtraccionDia: 10000,
@@ -27,15 +27,15 @@ let cajero = {
         5: 100,
         10: 100,
         50: 50,
-        100: 100, 
+        100: 100,
     },
     total: () => {
         let contador = 0;
-        
-        for(let billete in cajero.billetes) {
+
+        for (let billete in cajero.billetes) {
             contador += billete * cajero.billetes[billete];
         }
-        
+
         return contador;
     }
 }
@@ -54,7 +54,6 @@ let repositorioCuentas = [cuenta];
 const operacionConsulta = {
     nombre: 'CONSULTA',
     operacion: 'consultarEstadoCuenta',
-
 }
 
 const operacionExtraccion = {
@@ -71,14 +70,14 @@ let cajeroManager = {
     _usuario: null,
     _cajero: cajero,
     _cuenta: null,
-    _tipoOperacion: null, // Nueva variable para almacenar el tipo de operación
+    _tipoOperacion: null,
     ingresar: (usuarioInput, passwordInput) => {
-        let listaUsuariosEncontrados = repositorioUsuarios.filter(u => u.nombreUsuario == usuarioInput);
-        if (listaUsuariosEncontrados.length == 0) {
-            return;
-        }
-        if (passwordInput == listaUsuariosEncontrados[0].clave) {
-            cajeroManager._usuario = listaUsuariosEncontrados[0];
+        let usuarioEncontrado = repositorioUsuarios.find(u => u.nombreUsuario == usuarioInput && u.clave == passwordInput);
+        if (usuarioEncontrado) {
+            cajeroManager._usuario = usuarioEncontrado;
+            return true;
+        } else {
+            return false;
         }
     },
     operaciones: [
@@ -93,13 +92,13 @@ let cajeroManager = {
         if (operacion == 'consultarEstadoCuenta') {
             cajeroManager._tipoOperacion = 'consulta';
         } else if (operacion == 'retirarDinero') {
-            // setear para otras operaciones
+            cajeroManager._tipoOperacion = 'extraccion';
         } else if (operacion == 'ingresarDinero') {
             cajeroManager._tipoOperacion = 'deposito';
         }
     },
     setearCuenta: (cbu) => {
-        let cuenta = repositorioCuentas.filter(cuenta => cuenta.CBU == cbu)[0];
+        let cuenta = repositorioCuentas.find(cuenta => cuenta.CBU == cbu);
         cajeroManager._cuenta = cuenta;
     },
     _consultarEstadoCuenta: (cbu) => {
@@ -110,64 +109,68 @@ let cajeroManager = {
     }
 }
 
+function realizarExtraccion(montoExtraccion) {
+    if (cajeroManager._cuenta) {
+        // Lógica específica para la extracción
+        if (montoExtraccion <= cajeroManager._cuenta.saldo) {
+            cajeroManager._cuenta.saldo -= montoExtraccion;
+
+            // Actualizar la cantidad de billetes en el cajero (puedes adaptar según tu lógica)
+            let montoRestante = montoExtraccion;
+            const billetes = [100, 50, 10, 5];
+
+            for (let billete of billetes) {
+                const cantidadBilletes = Math.floor(montoRestante / billete);
+                cajeroManager._cajero.billetes[billete] -= cantidadBilletes;
+                montoRestante -= cantidadBilletes * billete;
+            }
+
+            // Agregar el movimiento a la lista de movimientos de la cuenta
+            cajeroManager._cuenta.movimientos.push({
+                tipo: 'EXTRACCION',
+                monto: montoExtraccion,
+                fecha: new Date()
+            });
+
+            return `Se han extraído ${montoExtraccion} pesos de la cuenta.`;
+        } else {
+            return "Fondos insuficientes para realizar la extracción.";
+        }
+    } else {
+        return "Seleccione una cuenta antes de realizar una extracción.";
+    }
+}
 
 function retirarDinero(monto) {
+    // chequear si se ha seleccionado una cuenta
+    if (!cajeroManager._cuenta) {
+        return "Seleccione una cuenta antes de realizar una extracción.";
+    }
+
     // chequear tengo suficiente dinero en la cuenta
+    if (monto > cajeroManager._cuenta.saldo) {
+        return "Fondos insuficientes en la cuenta.";
+    }
 
     // chequear el cajero tiene billetes para cubrir el monto --> llamar a recarga
-
-    // chequear el monto es mùltiplo de 5 
-
-    // actualizar monto de la cuenta y expulsar billetes
-}
-
-function ingresarDinero(cuenta, monto) {
-    if (monto <= 0) {
-        return "El monto a depositar debe ser mayor que cero.";
+    if (monto > cajeroManager._cajero.total()) {
+        return "El cajero no tiene suficientes billetes para cubrir el monto solicitado.";
     }
-    // chequear limite deposito
-    if (monto > cajeroManager._cuenta.limiteDeposito) {
-        return "El monto a depositar excede el límite de depósito de la cuenta.";
+
+    // chequear el monto es múltiplo de 5
+    if (monto % 5 !== 0) {
+        return "El monto debe ser múltiplo de 5.";
     }
-     // Añadir el monto al saldo de la cuenta
-     cajeroManager._cuenta.saldo += monto;
-    // Agregar el movimiento a la lista de movimientos de la cuenta
-    cajeroManager._cuenta.movimientos.push({
-        tipo: 'DEPOSITO',
-        monto: monto,
-        fecha: new Date()
-    });
 
-    return `Se han depositado ${monto} pesos en la cuenta.`;
-    // chequear capacidad de cajero
-    // descontar dinero de la cuenta
-}
+    // Llamamos a la función para realizar la extracción con el monto especificado
+    const mensajeExtraccion = realizarExtraccion(monto);
 
-function consultarUltimosMovimientos(cuenta) {
-    // devolver ùltimos 10 mvimientos de la cuenta... ver si se puede paginar
-}
-
-function seleccionarOperacion(operacion) {
-    cajeroManager.setearOperacion(operacion);
-    cambiarPagina(paginaCuenta());
-}
-function seleccionarCuenta(cbu) {
-    if (cajeroManager._tipoOperacion === 'consulta') {
-        cajeroManager.setearCuenta(cbu);
+    // Cambiamos a la página de saldo solo si la extracción fue exitosa
+    if (mensajeExtraccion.includes("Se han extraído")) {
         cambiarPagina(paginaSaldo());
-    } else if (cajeroManager._tipoOperacion === 'deposito') {
-        cajeroManager.setearCuenta(cbu);
-        cambiarPagina(paginaIngresoDeposito());
     }
-}
 
-
-
-function aceptarDeposito() {
-    // Realizar lógica para aceptar el depósito
-    const montoDeposito = Number(document.querySelector('#montoDeposito').value);
-    cajeroManager.depositar(montoDeposito);
-    cambiarPagina(paginaSaldo());
+    return mensajeExtraccion;
 }
 
 // ------------------------------------- LOGICA DE LA PAGINA (Interactua con el DOM) ----------------------------------------------------------
@@ -244,17 +247,86 @@ let paginaSaldo = () => `
         <img src="./images/plata.jpg" alt="">
     </div>
 `
+let paginaExtraccion = () => `
+    <div class="container-item">
+        <h2>Ingrese Extracción</h2>
+        <form>
+            <label>Monto a extraer:</label>
+            <input type="number" id="montoDeposito" required>
+            <p>Límite de extracción: ${cajeroManager._cuenta.limiteDeposito}</p>
+            <button onclick="aceptarExtraccion()" type="button">Aceptar</button>
+        </form>
+    </div>
+    <div class="container-item">
+        <img src="./images/extraccion.jpg" alt="">
+    </div>
+`
+
+function aceptarExtraccion() {
+    // Realizar lógica para aceptar la extracción
+    const montoExtraccion = Number(document.querySelector('#montoDeposito').value);
+    const mensajeExtraccion = retirarDinero(montoExtraccion);
+    alert(mensajeExtraccion);
+}
+
+function aceptarDeposito() {
+    // Realizar lógica para aceptar el depósito
+    const montoDeposito = Number(document.querySelector('#montoDeposito').value);
+    cajeroManager.depositar(montoDeposito);
+    cambiarPagina(paginaSaldo());
+}
+
+function ingresarDinero(cuenta, monto) {
+    if (monto <= 0) {
+        return "El monto a depositar debe ser mayor que cero.";
+    }
+    // chequear limite deposito
+    if (monto > cajeroManager._cuenta.limiteDeposito) {
+        return "El monto a depositar excede el límite de depósito de la cuenta.";
+    }
+    // Añadir el monto al saldo de la cuenta
+    cajeroManager._cuenta.saldo += monto;
+    // Agregar el movimiento a la lista de movimientos de la cuenta
+    cajeroManager._cuenta.movimientos.push({
+        tipo: 'DEPOSITO',
+        monto: monto,
+        fecha: new Date()
+    });
+    return `Se han depositado ${monto} pesos en la cuenta.`;
+    // chequear capacidad de cajero
+    // descontar dinero de la cuenta
+}
+
+function consultarUltimosMovimientos(cuenta) {
+    // devolver ùltimos 10 mvimientos de la cuenta... ver si se puede paginar
+}
+
+function seleccionarOperacion(operacion) {
+    cajeroManager.setearOperacion(operacion);
+    cambiarPagina(paginaCuenta());
+}
+
+function seleccionarCuenta(cbu) {
+    if (cajeroManager._tipoOperacion === 'consulta') {
+        cajeroManager.setearCuenta(cbu);
+        cambiarPagina(paginaSaldo());
+    } else if (cajeroManager._tipoOperacion === 'deposito') {
+        cajeroManager.setearCuenta(cbu);
+        cambiarPagina(paginaIngresoDeposito());
+    } else if (cajeroManager._tipoOperacion === 'extraccion') {
+        cajeroManager.setearCuenta(cbu);
+        cambiarPagina(paginaExtraccion());
+    }
+}
 
 function ingresarCajero() {
     let usuario = document.querySelector('input[name="usuario"]').value;
     let password = document.querySelector('input[name="password"]').value;
 
-    cajeroManager.ingresar(usuario, password);
-
-    if (cajeroManager._usuario != null) {
+    if (cajeroManager.ingresar(usuario, password)) {
         cambiarPagina(paginaOperaciones);
     } else {
-        alert('Usuario No Encontrado');
+        alert('Usuario o contraseña incorrectos');
     }
 }
 
