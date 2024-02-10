@@ -337,14 +337,14 @@ function volverAlInicio() {
 }
 
 function aceptarExtraccion() {
-    // Realizar lógica para aceptar la extracción
+    // Lógica para aceptar la extracción
     const montoExtraccion = Number(document.querySelector('#montoDeposito').value);
     const mensajeExtraccion = retirarDinero(montoExtraccion);
     alert(mensajeExtraccion);
 }
 
 function aceptarDeposito() {
-    // Realizar lógica para aceptar el depósito
+    // Lógica para aceptar el depósito
     const montoDeposito = Number(document.querySelector('#montoDeposito').value);
     cajeroManager.depositar(montoDeposito);
     cambiarPagina(paginaSaldo());
@@ -367,12 +367,6 @@ function ingresarDinero(cuenta, monto) {
         fecha: new Date()
     });
     return `Se han depositado ${monto} pesos en la cuenta.`;
-    // chequear capacidad de cajero
-    // descontar dinero de la cuenta
-}
-
-function consultarUltimosMovimientos(cuenta) {
-    // devolver ùltimos 10 mvimientos de la cuenta... ver si se puede paginar
 }
 
 function seleccionarOperacion(operacion) {
@@ -403,5 +397,3 @@ function ingresarCajero() {
         alert('Usuario o contraseña incorrectos');
     }
 }
-
-// cambiarPagina(paginaOperaciones);
